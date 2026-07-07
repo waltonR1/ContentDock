@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}{{ ui.listing_nav }} - {{ ui.app_name }}{% endblock %}
+
+{% block content %}
+<div class="page-title">
+  <h1>{{ ui.listing_nav }}</h1>
+  <a class="btn primary" href="{{ url_for('listing_create') }}">新增{{ ui.listing_name }}</a>
+</div>
+
+<div class="table-wrap">
+<table>
+  <thead>
+    <tr>
+      <th>ID</th>
+      <th>{{ ui.listing_main_image_label }}</th>
+      <th>{{ ui.listing_title_label }}</th>
+      <th>{{ ui.listing_category_label }}</th>
+      <th>{{ ui.listing_price_label }}</th>
+      <th>{{ ui.listing_location_label }}</th>
+      <th>{{ ui.listing_carousel_column }}</th>
+      <th>创建时间</th>
+      <th>操作</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for item in listings %}
+    <tr>
+      <td>{{ item.id }}</td>
+      <td>
+        {% if item.image_url %}
+          <img class="thumb" src="{{ item.image_url|image_url }}" alt="">
+        {% endif %}
+      </td>
+      <td>{{ item.title }}</td>
+      <td>{{ item.category_name or "-" }}</td>
+      <td>{{ item.price or "-" }}</td>
+      <td>{{ item.location or "-" }}</td>
+      <td>{{ "是" if item.carousel else "否" }}</td>
+      <td>{{ item.created_at }}</td>
+      <td class="actions">
+        <a class="btn small" href="{{ url_for('listing_edit', listing_id=item.id) }}">编辑</a>
+        <form method="post" action="{{ url_for('listing_delete', listing_id=item.id) }}" data-confirm="确定删除这个{{ ui.listing_name }}和相关图片吗？">
+          <button class="btn small danger" type="submit">删除</button>
+        </form>
+      </td>
+    </tr>
+    {% else %}
+    <tr>
+      <td colspan="9" class="empty">暂无{{ ui.listing_name }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+</div>
+{% endblock %}

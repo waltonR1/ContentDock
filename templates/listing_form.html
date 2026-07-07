@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% block title %}{{ "新增" if mode == "create" else "编辑" }}{{ ui.listing_name }} - {{ ui.app_name }}{% endblock %}
+
+{% block content %}
+<div class="page-title">
+  <h1>{{ "新增" if mode == "create" else "编辑" }}{{ ui.listing_name }}</h1>
+  <a class="btn" href="{{ url_for('listings') }}">返回列表</a>
+</div>
+
+<form class="form-card" method="post" enctype="multipart/form-data">
+  <div class="grid two">
+    <div>
+      <label>{{ ui.listing_title_label }} *</label>
+      <input type="text" name="title" value="{{ listing.title if listing else '' }}" required>
+    </div>
+
+    <div>
+      <label>{{ ui.listing_category_label }}</label>
+      <select name="category_id">
+        <option value="">不选择</option>
+        {% for c in categories %}
+          <option value="{{ c.id }}"
+            {% if listing and listing.category_id == c.id %}selected{% endif %}
+          >{{ c.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div>
+      <label>{{ ui.listing_price_label }}</label>
+      <input type="text" name="price" value="{{ listing.price if listing else '' }}">
+    </div>
+
+    <div>
+      <label>{{ ui.listing_layout_label }}</label>
+      <input type="text" name="layout" value="{{ listing.layout if listing else '' }}">
+    </div>
+
+    <div>
+      <label>{{ ui.listing_area_label }}</label>
+      <input type="text" name="area" value="{{ listing.area if listing else '' }}">
+    </div>
+
+    <div>
+      <label>{{ ui.listing_location_label }}</label>
+      <input type="text" name="location" value="{{ listing.location if listing else '' }}">
+    </div>
+  </div>
+
+  <label class="checkbox">
+    <input type="checkbox" name="carousel" {% if listing and listing.carousel %}checked{% endif %}>
+    {{ ui.listing_carousel_label }}
+  </label>
+
+  <label>{{ ui.listing_description_label }}</label>
+  <textarea name="description" rows="6">{{ listing.description if listing else '' }}</textarea>
+
+  <div class="image-section">
+    <label>{{ ui.listing_main_image_label }} {% if mode == "create" %}*{% endif %}</label>
+    {% if mode == "edit" and listing.image_url %}
+      <div class="current-image">
+        <img src="{{ listing.image_url|image_url }}" alt="">
+        <span>{{ listing.image_url }}</span>
+      </div>
+      <p class="hint">重新选择图片会替换当前{{ ui.listing_main_image_label }}。</p>
+    {% endif %}
+    <input type="file" name="main_image" accept=".jpg,.jpeg,.png,.webp" {% if mode == "create" %}required{% endif %}>
+  </div>
+
+  <div class="image-section">
+    <label>新增{{ ui.listing_sub_images_label }}</label>
+    <input type="file" name="sub_images" multiple accept=".jpg,.jpeg,.png,.webp">
+  </div>
+
+  <button class="btn primary" type="submit">保存</button>
+</form>
+
+{% if mode == "edit" %}
+<section class="form-card">
+  <h2>{{ ui.listing_gallery_label }}</h2>
+  <div class="gallery-grid">
+    {% for item in gallery %}
+      <div class="gallery-item">
+        <img src="{{ item.sub_image_url|image_url }}" alt="">
+        <div class="path">{{ item.sub_image_url }}</div>
+        <form method="post" action="{{ url_for('gallery_delete', gallery_id=item.id) }}" data-confirm="确定删除这张{{ ui.listing_sub_images_label }}吗？">
+          <button class="btn small danger" type="submit">删除{{ ui.listing_sub_images_label }}</button>
+        </form>
+      </div>
+    {% else %}
+      <p class="empty">暂无{{ ui.listing_sub_images_label }}</p>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+{% endblock %}

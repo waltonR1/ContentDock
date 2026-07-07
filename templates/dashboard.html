@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}{{ ui.dashboard_label }} - {{ ui.app_name }}{% endblock %}
+
+{% block content %}
+<h1>{{ ui.dashboard_label }}</h1>
+
+<div class="cards">
+  <div class="card">
+    <div class="card-num">{{ listing_count }}</div>
+    <div class="card-label">{{ ui.listing_name }}数量</div>
+  </div>
+  <div class="card">
+    <div class="card-num">{{ category_count }}</div>
+    <div class="card-label">{{ ui.listing_category_label }}数量</div>
+  </div>
+  <div class="card">
+    <div class="card-num">{{ carousel_count }}</div>
+    <div class="card-label">{{ ui.listing_carousel_column }}{{ ui.listing_name }}</div>
+  </div>
+</div>
+{% endblock %}

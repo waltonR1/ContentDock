@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}{{ ui.settings_nav }} - {{ ui.app_name }}{% endblock %}
+
+{% block content %}
+<h1>{{ ui.settings_nav }}</h1>
+
+<form class="form-card" method="post">
+  <label>{{ ui.settings_site_title_label }}</label>
+  <input type="text" name="site_title" value="{{ setting.site_title if setting else '' }}">
+
+  <label>{{ ui.settings_latest_title_label }}</label>
+  <input type="text" name="latest_listings_title" value="{{ setting.latest_listings_title if setting else '' }}">
+
+  <label>{{ ui.settings_featured_title_label }}</label>
+  <input type="text" name="featured_listings_title" value="{{ setting.featured_listings_title if setting else '' }}">
+
+  <label>{{ ui.settings_enter_text_label }}</label>
+  <input type="text" name="enter_hall_text" value="{{ setting.enter_hall_text if setting else '' }}">
+
+  <label>{{ ui.settings_view_all_text_label }}</label>
+  <input type="text" name="view_all_text" value="{{ setting.view_all_text if setting else '' }}">
+
+  <label>{{ ui.settings_catalog_title_label }}</label>
+  <input type="text" name="catalog_title" value="{{ setting.catalog_title if setting else '' }}">
+
+  <button class="btn primary" type="submit">保存设置</button>
+</form>
+{% endblock %}

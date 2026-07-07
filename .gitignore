@@ -1,0 +1,47 @@
+# Local secrets and machine-specific config
+config.ini
+*.local.ini
+.env
+.env.*
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.Python
+.venv/
+venv/
+env/
+ENV/
+
+# Flask / runtime
+instance/
+*.log
+
+# PyInstaller
+build/
+dist/
+*.spec
+
+# Packaging
+*.egg-info/
+.eggs/
+*.egg
+
+# Test / coverage cache
+.pytest_cache/
+.coverage
+htmlcov/
+
+# IDE / editor
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Local agent metadata
+.agents/

@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}{{ ui.category_nav }} - {{ ui.app_name }}{% endblock %}
+
+{% block content %}
+<h1>{{ ui.category_nav }}</h1>
+
+<form class="inline-form" method="post">
+  <input type="text" name="name" placeholder="新{{ ui.category_name_label }}" required>
+  <button class="btn primary" type="submit">新增{{ ui.listing_category_label }}</button>
+</form>
+
+<div class="table-wrap">
+<table>
+  <thead>
+    <tr>
+      <th>ID</th>
+      <th>{{ ui.category_name_label }}</th>
+      <th>{{ ui.listing_name }}数量</th>
+      <th>操作</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for c in categories %}
+    <tr>
+      <td>{{ c.id }}</td>
+      <td>
+        <form class="inline-form compact" method="post" action="{{ url_for('category_update', category_id=c.id) }}">
+          <input type="text" name="name" value="{{ c.name }}" required>
+          <button class="btn small" type="submit">保存</button>
+        </form>
+      </td>
+      <td>{{ c.listing_count }}</td>
+      <td>
+        <form method="post" action="{{ url_for('category_delete', category_id=c.id) }}" data-confirm="确定删除这个{{ ui.listing_category_label }}吗？">
+          <button class="btn small danger" type="submit">删除</button>
+        </form>
+      </td>
+    </tr>
+    {% else %}
+    <tr>
+      <td colspan="4" class="empty">暂无{{ ui.listing_category_label }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+</div>
+{% endblock %}

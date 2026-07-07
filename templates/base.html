@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <title>{% block title %}{{ ui.app_name }}{% endblock %}</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="{{ url_for('static', filename='admin.css') }}">
+</head>
+<body>
+  {% if session.get("admin_username") %}
+  <aside class="sidebar">
+    <div class="brand">{{ ui.app_name }}</div>
+    <a href="{{ url_for('dashboard') }}">{{ ui.dashboard_label }}</a>
+    <a href="{{ url_for('categories') }}">{{ ui.category_nav }}</a>
+    <a href="{{ url_for('listings') }}">{{ ui.listing_nav }}</a>
+    <a href="{{ url_for('settings') }}">{{ ui.settings_nav }}</a>
+    <a href="{{ url_for('logout') }}">退出登录</a>
+  </aside>
+  {% endif %}
+
+  <main class="{% if session.get('admin_username') %}main{% else %}login-main{% endif %}">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="messages">
+          {% for category, message in messages %}
+            <div class="alert alert-{{ category }}">{{ message }}</div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    {% block content %}{% endblock %}
+  </main>
+
+  <script>
+    document.addEventListener("submit", function (e) {
+      const form = e.target;
+      if (form.dataset.confirm) {
+        if (!confirm(form.dataset.confirm)) {
+          e.preventDefault();
+        }
+      }
+    });
+  </script>
+</body>
+</html>
