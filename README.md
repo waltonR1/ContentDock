@@ -37,6 +37,20 @@ python app.py
 http://127.0.0.1:5088
 ```
 
+## 运行行为
+
+- 每次启动程序都会生成一次性的登录密钥，旧浏览器 cookie 会自动失效，需要重新登录。
+- 后台页面会向本地程序发送心跳。所有后台页面关闭后，程序会在短暂等待后自动结束。
+- 侧边栏的“退出并关闭程序”会退出登录，并关闭当前后台程序。
+
+相关时间可以在 `[app]` 中调整：
+
+```ini
+shutdown_grace_seconds = 8
+client_timeout_seconds = 20
+shutdown_delay_seconds = 1
+```
+
 ## 配置
 
 复制 `config.example.ini` 为 `config.ini` 后，至少需要修改这些配置：

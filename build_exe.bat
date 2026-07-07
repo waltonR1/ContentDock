@@ -1,9 +1,10 @@
 @echo off
-pyinstaller --noconfirm --onefile --name house-admin ^
+pyinstaller --noconfirm --onefile --windowed --name house-admin ^
   --add-data "templates;templates" ^
   --add-data "static;static" ^
+  --add-data "config.ini;." ^
   app.py
 
 echo.
-echo Build finished. Put config.ini next to dist\house-admin.exe
+echo Release build finished.
 pause

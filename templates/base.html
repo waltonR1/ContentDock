@@ -14,7 +14,7 @@
     <a href="{{ url_for('categories') }}">{{ ui.category_nav }}</a>
     <a href="{{ url_for('listings') }}">{{ ui.listing_nav }}</a>
     <a href="{{ url_for('settings') }}">{{ ui.settings_nav }}</a>
-    <a href="{{ url_for('logout') }}">退出登录</a>
+    <a href="{{ url_for('logout') }}" data-confirm-link="确定退出登录并关闭程序吗？">退出登录</a>
   </aside>
   {% endif %}
 
@@ -41,6 +41,36 @@
         }
       }
     });
+
+    document.addEventListener("click", function (e) {
+      const link = e.target.closest("a[data-confirm-link]");
+      if (link && !confirm(link.dataset.confirmLink)) {
+        e.preventDefault();
+      }
+    });
+
+    (function () {
+      const pageId = (
+        Date.now().toString(36) +
+        Math.random().toString(36).slice(2)
+      );
+      const pingUrl = "{{ url_for('client_ping') }}?page_id=" + encodeURIComponent(pageId);
+      const leaveUrl = "{{ url_for('client_leave') }}?page_id=" + encodeURIComponent(pageId);
+
+      function ping() {
+        fetch(pingUrl, {
+          method: "POST",
+          cache: "no-store",
+          keepalive: true
+        }).catch(function () {});
+      }
+
+      ping();
+      setInterval(ping, 5000);
+      window.addEventListener("beforeunload", function () {
+        navigator.sendBeacon(leaveUrl);
+      });
+    })();
   </script>
 </body>
 </html>

@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <title>正在关闭 - {{ ui.app_name }}</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="{{ url_for('static', filename='admin.css') }}">
+</head>
+<body>
+  <main class="login-main">
+    <div class="login-card">
+      <h1>正在关闭程序</h1>
+      <p class="hint">已退出登录，后台程序即将结束。可以直接关闭这个页面。</p>
+    </div>
+  </main>
+  <script>
+    setTimeout(function () {
+      window.close();
+    }, 500);
+  </script>
+</body>
+</html>

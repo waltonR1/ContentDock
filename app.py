@@ -48,16 +48,28 @@ def app_dir() -> Path:
 
 
 def load_config() -> configparser.ConfigParser:
-    config_path = app_dir() / "config.ini"
-    if not config_path.exists():
-        example = app_dir() / "config.example.ini"
-        raise RuntimeError(
-            f"找不到 config.ini。请把 config.example.ini 复制为 config.ini 并修改配置。当前查找路径：{config_path}"
-        )
+    """
+    配置读取顺序：
+    1. 优先读取 exe 同目录的 config.ini，方便你自己覆盖配置
+    2. 如果没有外部 config.ini，则读取打包进 exe 的 config.ini
+    """
+    external_config = app_dir() / "config.ini"
 
     config = configparser.ConfigParser()
-    config.read(config_path, encoding="utf-8")
-    return config
+
+    if external_config.exists():
+        config.read(external_config, encoding="utf-8")
+        return config
+
+    bundled_config = resource_path("config.ini")
+
+    if os.path.exists(bundled_config):
+        config.read(bundled_config, encoding="utf-8")
+        return config
+
+    raise RuntimeError(
+        f"找不到 config.ini。请确认 config.ini 在 exe 同目录，或者已经打包进 exe。当前查找路径：{external_config}"
+    )
 
 
 config = load_config()
@@ -67,7 +79,16 @@ app = Flask(
     template_folder=resource_path("templates"),
     static_folder=resource_path("static"),
 )
-app.secret_key = config["app"].get("secret_key", "change-this-secret")
+
+# Use a per-start secret so browser cookies from previous launches cannot
+# authenticate this process.
+app.secret_key = f"{config['app'].get('secret_key', 'change-this-secret')}:{uuid.uuid4().hex}"
+
+active_clients = {}
+active_clients_lock = threading.Lock()
+saw_browser_client = False
+last_browser_seen_at = 0.0
+shutdown_started = False
 
 
 def external_image_url(public_path: str) -> str:
@@ -137,6 +158,99 @@ def ui_text(key: str) -> str:
 def inject_ui_text():
     ui = {key: ui_text(key) for key in UI_DEFAULTS}
     return {"ui": ui}
+
+
+def shutdown_delay_seconds() -> float:
+    return config["app"].getfloat("shutdown_delay_seconds", 1.0)
+
+
+def client_timeout_seconds() -> float:
+    return config["app"].getfloat("client_timeout_seconds", 20.0)
+
+
+def shutdown_grace_seconds() -> float:
+    return config["app"].getfloat("shutdown_grace_seconds", 8.0)
+
+
+def mark_client_seen(page_id: str):
+    global saw_browser_client, last_browser_seen_at
+
+    if not page_id:
+        return
+
+    now = time.time()
+    with active_clients_lock:
+        active_clients[page_id] = now
+        saw_browser_client = True
+        last_browser_seen_at = now
+
+
+def mark_client_left(page_id: str):
+    global last_browser_seen_at
+
+    if not page_id:
+        return
+
+    with active_clients_lock:
+        active_clients.pop(page_id, None)
+        last_browser_seen_at = time.time()
+
+
+def schedule_shutdown(delay=None):
+    global shutdown_started
+
+    with active_clients_lock:
+        if shutdown_started:
+            return
+        shutdown_started = True
+
+    wait_seconds = shutdown_delay_seconds() if delay is None else delay
+
+    def stop_process():
+        time.sleep(max(wait_seconds, 0))
+        os._exit(0)
+
+    threading.Thread(target=stop_process, daemon=True).start()
+
+
+def monitor_browser_clients():
+    while True:
+        time.sleep(2)
+        now = time.time()
+        should_shutdown = False
+
+        with active_clients_lock:
+            stale_before = now - client_timeout_seconds()
+            stale_ids = [
+                page_id
+                for page_id, seen_at in active_clients.items()
+                if seen_at < stale_before
+            ]
+            for page_id in stale_ids:
+                active_clients.pop(page_id, None)
+
+            if (
+                saw_browser_client
+                and not active_clients
+                and now - last_browser_seen_at >= shutdown_grace_seconds()
+            ):
+                should_shutdown = True
+
+        if should_shutdown:
+            schedule_shutdown()
+            return
+
+
+@app.route("/client/ping", methods=["POST"])
+def client_ping():
+    mark_client_seen(request.args.get("page_id", ""))
+    return ("", 204)
+
+
+@app.route("/client/leave", methods=["POST"])
+def client_leave():
+    mark_client_left(request.args.get("page_id", ""))
+    return ("", 204)
 
 
 # -----------------------------
@@ -269,8 +383,8 @@ def login():
 @app.route("/logout")
 def logout():
     session.clear()
-    flash("已退出登录。", "info")
-    return redirect(url_for("login"))
+    schedule_shutdown()
+    return render_template("shutdown.html")
 
 
 # -----------------------------
@@ -790,6 +904,8 @@ if __name__ == "__main__":
 
     if config["app"].getboolean("auto_open_browser", True):
         threading.Thread(target=open_browser_later, args=(url,), daemon=True).start()
+
+    threading.Thread(target=monitor_browser_clients, daemon=True).start()
 
     print(f"House Admin started: {url}")
     serve(app, host=host, port=port)
