@@ -12,6 +12,7 @@ from pathlib import Path
 
 import pymysql
 import paramiko
+from sshtunnel import SSHTunnelForwarder
 from flask import (
     Flask,
     render_template,
@@ -73,6 +74,8 @@ def load_config() -> configparser.ConfigParser:
 
 
 config = load_config()
+ssh_tunnel = None
+ssh_tunnel_lock = threading.Lock()
 
 app = Flask(
     __name__,
@@ -252,21 +255,76 @@ def client_leave():
     mark_client_left(request.args.get("page_id", ""))
     return ("", 204)
 
-
 # -----------------------------
 # 数据库
 # -----------------------------
 
+def get_ssh_tunnel():
+    global ssh_tunnel
+
+    use_tunnel = config["database"].getboolean(
+        "use_ssh_tunnel",
+        fallback=False,
+    )
+
+    if not use_tunnel:
+        return None
+
+    with ssh_tunnel_lock:
+        if ssh_tunnel and ssh_tunnel.is_active:
+            return ssh_tunnel
+
+        ssh_host = config["sftp"].get("host")
+        ssh_port = config["sftp"].getint("port", 22)
+        ssh_username = config["sftp"].get("username")
+        ssh_password = config["sftp"].get("password", fallback=None)
+        key_path = config["sftp"].get("key_path", fallback=None)
+
+        tunnel_options = {
+            "ssh_address_or_host": (ssh_host, ssh_port),
+            "ssh_username": ssh_username,
+            "remote_bind_address": (
+                config["database"].get("host", "127.0.0.1"),
+                config["database"].getint("port", 3306),
+            ),
+            "local_bind_address": ("127.0.0.1", 0),
+        }
+
+        if key_path:
+            tunnel_options["ssh_pkey"] = os.path.expanduser(key_path)
+        else:
+            tunnel_options["ssh_password"] = ssh_password
+
+        ssh_tunnel = SSHTunnelForwarder(**tunnel_options)
+        ssh_tunnel.start()
+
+        print(
+            "SSH database tunnel started: "
+            f"127.0.0.1:{ssh_tunnel.local_bind_port}"
+        )
+
+        return ssh_tunnel
+
 def get_db():
+    tunnel = get_ssh_tunnel()
+
+    if tunnel:
+        db_host = "127.0.0.1"
+        db_port = tunnel.local_bind_port
+    else:
+        db_host = config["database"].get("host")
+        db_port = config["database"].getint("port", 3306)
+
     return pymysql.connect(
-        host=config["database"].get("host"),
-        port=config["database"].getint("port", 3306),
+        host=db_host,
+        port=db_port,
         user=config["database"].get("user"),
         password=config["database"].get("password"),
         database=config["database"].get("database"),
         charset=config["database"].get("charset", "utf8mb4"),
         cursorclass=pymysql.cursors.DictCursor,
         autocommit=False,
+        connect_timeout=10,
     )
 
 
