@@ -37,11 +37,13 @@
       <td>{{ item.location or "-" }}</td>
       <td>{{ "是" if item.carousel else "否" }}</td>
       <td>{{ item.created_at }}</td>
-      <td class="actions">
-        <a class="btn small" href="{{ url_for('listing_edit', listing_id=item.id) }}">编辑</a>
-        <form method="post" action="{{ url_for('listing_delete', listing_id=item.id) }}" data-confirm="确定删除这个{{ ui.listing_name }}和相关图片吗？">
-          <button class="btn small danger" type="submit">删除</button>
-        </form>
+      <td>
+        <div class="actions">
+          <a class="btn small" href="{{ url_for('listing_edit', listing_id=item.id) }}">编辑</a>
+          <form method="post" action="{{ url_for('listing_delete', listing_id=item.id) }}" data-confirm="确定删除这个{{ ui.listing_name }}和相关图片吗？">
+            <button class="btn small danger" type="submit">删除</button>
+          </form>
+        </div>
       </td>
     </tr>
     {% else %}
